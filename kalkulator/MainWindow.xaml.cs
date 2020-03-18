@@ -20,58 +20,534 @@ namespace kalkulator
     /// </summary>
     public partial class MainWindow : Window
     {
-        private List<string>CalculatorIn;
+        private Dictionary<string, int> operators;
         public MainWindow()
         {
             InitializeComponent();
-            CalculatorIn = new List<string>();
-
-            
+            operators = new Dictionary<string, int>();
+            operatorsDictionary();
+            MessageBox.Show(" p - zmiana +/- \r\n 2x del - całkowite czyszczenie \r\n esc - wyjście ", "Informacja", MessageBoxButton.OK, MessageBoxImage.Information);
         }
-
+        //Przyciski nieliczbowe i nie operatorowe
         private void AC_Click(object sender, RoutedEventArgs e)
         {
-            Button p = (Button)sender;
+            if(View_tb.Text.Length == 0)
+            {
+                Result_tb.Text = "";
+            }
+            View_tb.Text = "";
         }
         private void C_Click(object sender, RoutedEventArgs e)
         {
             Button p = (Button)sender;
+            if (!isEmpty())
+                View_tb.Text = View_tb.Text.Substring(0, View_tb.Text.Length - 1);
+            else
+                View_tb.Text = "";
         }
         private void PM_Click(object sender, RoutedEventArgs e)
         {
             Button p = (Button)sender;
+            string s = View_tb.Text;
+            int len = s.Length;
+            if (len == 0)
+            {
+                View_tb.Text = "-";
+            }
+            else if (len == 1 && s[len - 1] == '-')
+            {
+                View_tb.Text = "";
+            }
+            else if (s[len - 1] == '-')
+            {
+                View_tb.Text = View_tb.Text.Substring(0, View_tb.Text.Length - 1) + '+';
+            }
+            else if (s[len - 1] == '+')
+            {
+                View_tb.Text = View_tb.Text.Substring(0, View_tb.Text.Length - 1) + '-';
+            }
+
         }
+
+        //Dot
         private void Dot_Click(object sender, RoutedEventArgs e)
         {
             Button p = (Button)sender;
+            int index_operator = View_tb.Text.Length;
+            if (View_tb.Text.Length == 0)
+            {
+                View_tb.Text = "0,";
+            }
+            else if (operatorAnywhere())
+            {
+                for (int i = View_tb.Text.Length - 1; i >= 0; i--)
+                {
+                    if (isOperator(View_tb.Text[i]))
+                    {
+                        index_operator--;
+                        break;
+                    }
+                    index_operator--;
+                }
+                if (View_tb.Text.Length == 1 && View_tb.Text[View_tb.Text.Length - 1] == '-')
+                {
+                    View_tb.Text += "0,";
+                }
+                else if (!isDot(index_operator) && isNumber(View_tb.Text[View_tb.Text.Length - 1]))
+                {
+                    View_tb.Text += ',';
+                }
+            }
+            else if (isNumber(View_tb.Text[View_tb.Text.Length - 1]) && !isDot(0))
+            {
+                View_tb.Text += ',';
+            }
+
         }
+        private bool isDot(int indexOp)
+        {
+            for (int i = View_tb.Text.Length - 1; i >= indexOp; i--)
+            {
+                if (View_tb.Text[i] == ',')
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        //Operator
         private void Operator_Click(object sender, RoutedEventArgs e)
         {
             Button p = (Button)sender;
+            if (View_tb.Text.Length == 1 && p.Content.ToString() == "+" && View_tb.Text[0] == '-')
+            {
+                View_tb.Text = "";
+            }
+            else if (View_tb.Text.Length >= 1 && View_tb.Text[View_tb.Text.Length - 1] == '(' && p.Content.ToString() == "-")
+            {
+                View_tb.Text += p.Content.ToString();
+            }
+            else if (View_tb.Text.Length != 0 && View_tb.Text[View_tb.Text.Length - 1] != '(')
+            {
+                if (isOperator(View_tb.Text[View_tb.Text.Length - 1]) || isDot(View_tb.Text.Length - 1))
+                {
+                    View_tb.Text = View_tb.Text.Remove(View_tb.Text.Length - 1, 1);
+                }
+                View_tb.Text += p.Content.ToString();
+            }
+            else if (View_tb.Text.Length == 0 && p.Content.ToString() == "-")
+            {
+                View_tb.Text += p.Content.ToString();
+            }
+
         }
+        private bool isOperator(char a)
+        {
+            if (a == '+' || a == '-' || a == '*' || a == '/')
+                return true;
+            else
+                return false;
+        }
+        private bool operatorAnywhere()
+        {
+            for (int i = 0; i < View_tb.Text.Length; i++)
+            {
+                if (isOperator(View_tb.Text[i]))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        private int whereSlash(string[] w)
+        {
+            int index = -1;
+            for (int i = 0; i < w.Length - 1; i++)
+            {
+                if (View_tb.Text[i] == '/')
+                {
+                    index = i;
+                }
+            }
+            return index;
+        }
+
+        //Result
         private void Result_Click(object sender, RoutedEventArgs e)
         {
+            if (View_tb.Text.Length != 0)
+            {
+
+                result(View_tb.Text);
+                if (View_tb.Text[View_tb.Text.Length - 1] == ',')
+                {
+                    View_tb.Text = View_tb.Text.Remove(View_tb.Text.Length - 1, 1);
+                }
+                Result_tb.Text += View_tb.Text + "=";
+
+                if (!MakeDisplayGreatAgain())
+                {
+                    Result_tb.Text += "\r\n";
+                    View_tb.Text = "";
+                }
+                else
+                {
+                    Result_tb.Text += "!!! \r\n";
+                    View_tb.Text = "";
+                    MessageBox.Show("Podjęto próbę dzielenia przez zero.", "Uwaga!", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+        private void operatorsDictionary()
+        {
+            operators.Add("(", 0);
+            operators.Add(")", 1);
+            operators.Add("+", 1);
+            operators.Add("-", 1);
+            operators.Add("/", 2);
+            operators.Add("*", 2);
+        }
+        private string result(string s)
+        {
+            //bracketAndMinus(s);
+            Console.WriteLine(s);
+            string equation = "";
+            for (int i = 0; i < s.Length; i++)
+            {
+                if (isOperator(s[i]))
+                {
+                    equation += " " + s[i] + " ";
+                }
+                else if (s[i] == '(')
+                {
+                    equation += "( ";
+                }
+                else if (s[i] == ')')
+                {
+                    equation += " )";
+                }
+                else equation += s[i];
+            }
+            Console.WriteLine("Equation: " + equation);
+            return equation;
+        }
+        string ResultToDouble(string s)
+        {
+
+            Stack<string> result_st = new Stack<string>();
+            string output = "";
+           //bracketAndMinus(s);
+            string[] eq = s.Trim().Split();
+            foreach (string c in eq)
+            {
+
+                try
+                {
+                    double result_double = Convert.ToDouble(c);
+                    output += c + " ";
+                }
+                catch
+                {
+                    if (c == "(" || result_st.Count == 0)
+                        result_st.Push(c);
+                    else if (c == ")")
+                    {
+                        while (result_st.Peek() != "(")
+                        {
+                            output += result_st.Pop() + " ";
+                        }
+                        result_st.Pop();
+                    }
+                    else
+                    {
+                        //Console.WriteLine(c);
+                        while (result_st.Count != 0 && operators[c] <= operators[result_st.Peek()])
+                        {
+                            output += result_st.Pop() + " ";
+                        }
+                        result_st.Push(c);
+                    }
+                    //Console.WriteLine("Wyjscie" + output);
+                }
+            }
+
+            while (result_st.Count != 0)
+            {
+                output += result_st.Pop() + " ";
+            }
+            Console.WriteLine("ONP: " + output);
+
+            return output;
+        }
+
+        private double CalculatePostfix(string s)
+        {
+            string[] symbols = s.Trim().Split();
+            Stack<double> stack = new Stack<double>();
+
+            for (int i = 0; i < symbols.Length; i++)
+            {
+                try
+                {
+                    double number = Convert.ToDouble(symbols[i]);
+                    stack.Push(number);
+                }
+                catch
+                {
+                    double o1 = stack.Pop();
+                    double o2 = stack.Pop();
+                    stack.Push(operation(o2, o1, symbols[i]));
+
+                }
+
+            }
+            return (stack.Pop());
 
         }
+        private double operation(double o2, double o1, string symbol)
+        {
+            double o3 = 0;
+            if (symbol == "+")
+            {
+                o3 = o2 + o1;
+            }
+            if (symbol == "-")
+            {
+                o3 = o2 - o1;
+            }
+            if (symbol == "/")
+            {
+                o3 = o2 / o1;
+            }
+            if (symbol == "*")
+            {
+                o3 = o2 * o1;
+            }
+            return o3;
+        }
+
+        //Display
+        private bool MakeDisplayGreatAgain()
+        {
+
+            //string w = result(View_tb.Text);
+            string[] w = result(View_tb.Text).Trim().Split();
+            bool isZero = false;
+            if (View_tb.Text[0] == '-')
+                View_tb.Text = '0' + View_tb.Text;
+            
+            if (whereSlash(w) > -1)
+            {
+                double c = Convert.ToDouble(w[whereSlash(w) + 1]);
+                if (c == 0)
+                {
+                    isZero = true;
+                }
+
+            }
+            if (!isZero)
+            {
+                
+                string s = ResultToDouble(result(View_tb.Text));
+                Result_tb.Text += CalculatePostfix(s.ToString());
+            }
+            return isZero;
+        }
+
+        //Number
         private void Number_Click(object sender, RoutedEventArgs e)
         {
-            Button p = (Button)sender;
-            string g = p.Name.ToString();
-            CalculatorIn.Add(p.Name);
+            Button number = (Button)sender;
+            if (isEmpty() && number.Content.ToString() == "0") { }
+            else if (!isEmpty() && View_tb.Text[View_tb.Text.Length - 1] == ')')
+            { }
+            else if (View_tb.Text.Length == 1 && isOperator(View_tb.Text[View_tb.Text.Length - 1]) && number.Content.ToString() == "0")
+            {
+
+            }
+            else
+            {
+                View_tb.Text += number.Content.ToString();
+            }
+
+
         }
+        private bool isNumber(char a)
+        {
+            if (a == '1' || a == '2' || a == '3' || a == '4' || a == '5' || a == '6' || a == '7' || a == '8' || a == '9' || a == '0')
+                return true;
+            else
+                return false;
+        }
+
+        //Bracket
+        /*
         private void Bracket_Click(object sender, RoutedEventArgs e)
         {
+            Button p = (Button)sender;
+            if (p.Content.ToString() == "(" && isEmpty())
+            {
+                View_tb.Text += p.Content.ToString();
+            }
+            else if (p.Content.ToString() == "(" && isOperator(View_tb.Text[View_tb.Text.Length - 1]))
+            {
+                View_tb.Text += p.Content.ToString();
+            }
+            else if (p.Content.ToString() == ")" && !isEmpty() && isNumber(View_tb.Text[View_tb.Text.Length - 1]) && bracketIsOpen() && operatorAnywhere())
+            {
+                View_tb.Text += p.Content.ToString();
+            }
 
         }
-
-        private void View_lb_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private bool isBracket(char a)
         {
-
+            if (a == ')' || a == '(')
+                return true;
+            else
+                return false;
+        }
+        private bool bracketIsOpen()
+        {
+            int left = 0;
+            int right = 0;
+            for (int i = 0; i < View_tb.Text.Length; i++)
+            {
+                if (View_tb.Text[View_tb.Text.Length - 1] == '(')
+                {
+                    left++;
+                }
+                else if (View_tb.Text[View_tb.Text.Length - 1] == ')')
+                {
+                    right++;
+                }
+            }
+            if (left == 0 && right == 0)
+            {
+                return true;
+            }
+            else if (left > right)
+                return true;
+            else
+                return false;
+        }
+        private void bracketAndMinus(string s) //zwraca pozycje minusa
+        {
+            string w = s;
+            for(int i=1;i<s.Length;i++)
+            {
+                if(s[i-1] == '(' && s[i] == '-')
+                {
+                    w.Insert(i, "0");
+                }
+            }
+            s = w;
+        } */
+        //Empty
+        private bool isEmpty()
+        {
+            if (View_tb.Text.Length == 0)
+                return true;
+            else
+                return false;
         }
 
-        private void Result_lb_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
+        //OFF
+        
 
+        /*************************************************************
+         Obsługa przycisków
+         *************************************************************/
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            if(e.Key == Key.D1 || e.Key == Key.NumPad1)
+            {
+                One.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            else if (e.Key == Key.D2 || e.Key == Key.NumPad2)
+            {
+                Two.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            else if (e.Key == Key.D3 || e.Key == Key.NumPad3)
+            {
+                Three.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            else if (e.Key == Key.D4 || e.Key == Key.NumPad4)
+            {
+                Four.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            else if (e.Key == Key.D5 || e.Key == Key.NumPad5)
+            {
+                Five.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            else if (e.Key == Key.D6 || e.Key == Key.NumPad6)
+            {
+                Six.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            else if (e.Key == Key.D7 || e.Key == Key.NumPad7)
+            {
+                Seven.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            else if (e.Key == Key.D8 || e.Key == Key.NumPad8)
+            {
+                if (Keyboard.IsKeyDown(Key.LeftShift))
+                    Star.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                else
+                    Eight.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            else if (e.Key == Key.D9 || e.Key == Key.NumPad9)
+            {
+                    Nine.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            else if (e.Key == Key.D0 || e.Key == Key.NumPad0)
+            { 
+                    Zero.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+
+            /**********************************************************/
+
+            /*else if (e.Key == Key.Enter)
+            {
+                Equals.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }*/
+            else if (e.Key == Key.OemComma || e.Key == Key.OemPeriod || e.Key == Key.Decimal)
+            {
+                Dot.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            else if(e.Key == Key.OemMinus || e.Key == Key.Subtract)
+            {
+                Minus.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            else if (e.Key == Key.OemPlus || e.Key == Key.Add)
+            {
+                Plus.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            else if (e.Key == Key.Delete)
+            {
+                AC.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            else if (e.Key == Key.Back)
+            {
+                C.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            else if (e.Key == Key.Divide || e.Key == Key.OemBackslash || e.Key == Key.OemQuestion || e.Key == Key.Oem5)
+            {
+                Slash.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            else if (e.Key == Key.Multiply)
+            {
+                Star.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            else if(e.Key == Key.P)
+            {
+                MP.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            else if(e.Key == Key.Escape)
+            {
+                Application.Current.Shutdown();
+            }
+            Console.WriteLine(e.Key.ToString());
+            
         }
     }
 }
