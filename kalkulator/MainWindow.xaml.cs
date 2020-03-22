@@ -13,6 +13,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
+
+//WERSJA 22.03.2020
+
 namespace kalkulator
 {
     /// <summary>
@@ -229,7 +232,7 @@ namespace kalkulator
         //Result
         private void Result_Click(object sender, RoutedEventArgs e)
         {
-            if (View_tb.Text.Length != 0)
+            if (View_tb.Text.Length != 0 && !bracketIsOpen())
             {
                 
                     result(View_tb.Text);
@@ -388,10 +391,12 @@ namespace kalkulator
             //string k = View_tb.Text;
             //bracketAndMinus(k);
             //string w = result(View_tb.Text);
+            if (View_tb.Text[0] == '-')
+                View_tb.Text = "0" + View_tb.Text;
+
             string[] w = result(View_tb.Text).Trim().Split();
             bool isZero = false;
-            if (View_tb.Text[0] == '-')
-                View_tb.Text = '0' + View_tb.Text;
+            
 
 
             if (WhereSlash(w) > -1)
@@ -405,9 +410,7 @@ namespace kalkulator
                     }
                 }
                 catch
-                {
-                    
-                }
+                {}
 
             }
             if (!isZero)
@@ -480,11 +483,11 @@ namespace kalkulator
             bool t = false;
             for (int i = 0; i < View_tb.Text.Length; i++)
             {
-                if (View_tb.Text[View_tb.Text.Length - 1] == '(')
+                if (View_tb.Text[i] == '(')
                 {
                     left++;
                 }
-                else if (View_tb.Text[View_tb.Text.Length - 1] == ')')
+                else if (View_tb.Text[i] == ')')
                 {
                     right++;
                 }
